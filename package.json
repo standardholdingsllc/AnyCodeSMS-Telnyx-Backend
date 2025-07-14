@@ -1,0 +1,6 @@
+{
+  "name": "anycodesms-webhook",
+  "version": "1.0.0",
+  "main": "api/telnyx-inbound.js",
+  "license": "MIT"
+} 
