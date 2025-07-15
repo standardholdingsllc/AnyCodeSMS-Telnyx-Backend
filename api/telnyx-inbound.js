@@ -1,23 +1,38 @@
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
-    req.on('end', () => {
-      try {
-        const event = JSON.parse(body);
-        console.log('Received Telnyx webhook:', event);
-        // TODO: Add your processing logic here
-        res.statusCode = 200;
-        res.end(JSON.stringify({ received: true }));
-      } catch (err) {
-        res.statusCode = 400;
-        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+    try {
+      // Handle both parsed and raw body
+      let event;
+      if (typeof req.body === 'string') {
+        event = JSON.parse(req.body);
+      } else if (req.body) {
+        event = req.body;
+      } else {
+        // Fallback to reading raw body
+        let body = '';
+        req.on('data', chunk => {
+          body += chunk.toString();
+        });
+        req.on('end', () => {
+          try {
+            event = JSON.parse(body);
+            console.log('Received Telnyx webhook:', event);
+            res.status(200).json({ received: true });
+          } catch (err) {
+            console.error('Error parsing JSON:', err);
+            res.status(400).json({ error: 'Invalid JSON' });
+          }
+        });
+        return;
       }
-    });
+      
+      console.log('Received Telnyx webhook:', event);
+      res.status(200).json({ received: true });
+    } catch (err) {
+      console.error('Error processing webhook:', err);
+      res.status(400).json({ error: 'Invalid request' });
+    }
   } else {
-    res.statusCode = 405;
-    res.end(JSON.stringify({ error: 'Method not allowed' }));
+    res.status(405).json({ error: 'Method not allowed' });
   }
 } 
